@@ -1,32 +1,24 @@
 const state = {
   view: {
     squares: document.querySelectorAll(".square"),
-    enemy: document.querySelector(".enemy"),
     timeLeft: document.querySelector("#time-left"),
     score: document.querySelector("#score"),
+    life: document.querySelector("#life"),
+    gameOverScreen: document.querySelector("#game-over-screen"),
+    restartBtn: document.querySelector("#restart-btn"),
   },
   values: {
     gameVelocity: 1000,
     hitPosition: 0,
     result: 0,
-    curretTime: 60,
+    currentTime: 60,
+    lives: 3,
   },
   actions: {
-    timerId: setInterval(randomSquare, 1000),
-    countDownTimerId: setInterval(countDown, 1000),
+    timerId: null,
+    countDownTimerId: null,
   },
 };
-
-function countDown() {
-  state.values.curretTime--;
-  state.view.timeLeft.textContent = state.values.curretTime;
-
-  if (state.values.curretTime <= 0) {
-    clearInterval(state.actions.countDownTimerId);
-    clearInterval(state.actions.timerId);
-    alert("Game Over! O seu resultado foi: " + state.values.result);
-  }
-}
 
 function playSound(audioName) {
   let audio = new Audio(`./src/audios/${audioName}.m4a`);
@@ -45,6 +37,28 @@ function randomSquare() {
   state.values.hitPosition = randomSquare.id;
 }
 
+function countDown() {
+  state.values.currentTime--;
+  state.view.timeLeft.textContent = state.values.currentTime;
+
+  if (state.values.currentTime <= 0) {
+    state.values.lives--;
+    state.view.life.textContent = "x" + state.values.lives;
+
+    clearInterval(state.actions.countDownTimerId);
+    clearInterval(state.actions.timerId);
+
+    if (state.values.lives > 0) {
+      playSound("life-lost");
+      alert(`Você perdeu uma vida! Restam ${state.values.lives}`);
+      startLife();
+    } else {
+      playSound("game-over");
+      showGameOverScreen();
+    }
+  }
+}
+
 function addListenerHitBox() {
   state.view.squares.forEach((square) => {
     square.addEventListener("mousedown", () => {
@@ -58,8 +72,36 @@ function addListenerHitBox() {
   });
 }
 
+function startLife() {
+  state.values.currentTime = 60;
+  state.view.timeLeft.textContent = state.values.currentTime;
+
+  state.actions.timerId = setInterval(randomSquare, state.values.gameVelocity);
+  state.actions.countDownTimerId = setInterval(countDown, 1000);
+}
+
+function resetGame() {
+  state.values.lives = 3;
+  state.values.result = 0;
+  state.view.life.textContent = "x" + state.values.lives;
+  state.view.score.textContent = state.values.result;
+  hideGameOverScreen();
+  startLife();
+}
+
+function showGameOverScreen() {
+  state.view.gameOverScreen.classList.remove("hidden");
+}
+
+function hideGameOverScreen() {
+  state.view.gameOverScreen.classList.add("hidden");
+}
+
 function initialize() {
   addListenerHitBox();
+  state.view.restartBtn.addEventListener("click", resetGame);
+  startLife();
 }
 
 initialize();
+
